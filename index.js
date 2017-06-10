@@ -2,7 +2,8 @@ const Client = require('instagram-private-api').V1;
 const storage = new Client.CookieMemoryStorage();
 const co = require('co');
 const bluebird = require('bluebird');
-const axios = require('axios');
+const argv = require('optimist').argv;
+const {getInstagramUsers, createUserCycler} = require('./backend_service');
 
 const MAX_NUMBER_REQUESTS_PER_USER = 10;
 const MIN_NUMBER_REQUESTS_PER_USER = 1;
@@ -19,43 +20,6 @@ const MAX_RANDOM_LOGIN_WAIT = 3000;
 const MIN_RANDOM_LOGIN_WAIT = 1000;
 
 const getLoginWait = () => getRandomInt(MIN_RANDOM_LOGIN_WAIT, MAX_RANDOM_LOGIN_WAIT);
-
-const getNextUser = (() => {
-    const USERS = [
-        {
-            username: 'sp_sn_1',
-            password: '0ZrahuMMui9B'
-        },
-    ];
-
-    let currentuser = -1;
-    return () => {
-        currentuser++;
-        if (currentuser >= USERS.length) { currentuser = 0; }
-
-        return USERS[currentuser];
-    };
-})();
-
-const redisservice = (() => {
-    /*
-    const redis = require("redis")
-    bluebird.promisifyall(redis.redisclient.prototype);
-    const Client = redis.createclient();
-    */
-
-    return {
-        getnextidtocrawl: co.wrap(function*() {
-            return 1518023607;
-            //return yield Client.spopasync('ig_account_ids');
-        }),
-        saveresult: co.wrap(function*(result) {
-            //return yield Client.hsetasync('results', result.id, json.stringify(result));
-            console.log(result);
-        })
-    };
-})();
-
 
 const crawlnextaccounts = co.wrap(function*() {
     let accountslefttocrawl = getRandomNumberRequests();
@@ -106,21 +70,11 @@ const kickoff = co.wrap(function*() {
     console.log('done!');
 });
 
-kickoff().then(() => console.log('woot'));
-
-/*
-    hash.fullname = json.fullname;
-    hash.isprivate = json.isprivate;
-    hash.isbusiness = json.isbusiness;
-    hash.biography = json.biography;
-    hash.externalurl = json.externalurl;
-    hash.external_url = json.external_url;
-    hash.public_email = json.public_email;
-    hash.public_phone_number = json.public_phone_number;
-    hash.contact_phone_number = json.contact_phone_number;
-    hash.city_name = json.city_name;
-    hash.zip = json.zip;
-    hash.address_street = json.address_street;
-    hash.latitude = json.latitude;
-    hash.longitude = json.longitude;
-*/
+if (argv.getUsers) {
+    getInstagramUsers().then((users) => {
+        console.log('The following users have been assigned to your machine:');
+        console.log(JSON.stringify(users, null, 4));
+    });
+} else {
+    kickoff().then(() => console.log('woot'));
+}
