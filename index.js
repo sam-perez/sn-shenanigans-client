@@ -1,7 +1,7 @@
 const co = require('co');
 const bluebird = require('bluebird');
 const argv = require('optimist').argv;
-const {getInstagramUsers, createUserCycler} = require('./backend_service');
+const {getInstagramUsers, createUserCycler, saveResult, getNextIdToCrawl} = require('./backend_service');
 const {createSessionWithUser, kickoff} = require('./instagram_service');
 
 if (argv.getUsers) {
@@ -29,5 +29,5 @@ if (argv.getUsers) {
         }
     })().then(() => console.log('done'));
 } else {
-    kickoff().then(() => console.log('woot'));
+    kickoff(getInstagramUsers, createUserCycler, saveResult, getNextIdToCrawl).then(() => console.log('woot'));
 }

@@ -8,7 +8,8 @@
     "bluebird": "^3.5.0",
     "co": "^4.6.0",
     "instagram-private-api": "https://github.com/sam-perez/instagram-private-api/tarball/2bb66bf1bb65d592a28f1ef66153b94da3e2d00c",
-    "optimist": "^0.6.1"
+    "optimist": "^0.6.1",
+    "single-line-log": "^1.1.2"
   },
   "devDependencies": {},
   "scripts": {

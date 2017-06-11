@@ -13,22 +13,66 @@ const URL_PATHS = {
     ADD_IG_USER: `add_ig_user`,
     GET_IG_USERS: `get_ig_users`,
     CLEAR_IP_AFFINITIES: `clear_ip_affinities`,
+    GET_NEXT_MOLLY_ACCOUNT: `get_next_molly_account`,
+    GET_NEXT_OLLY_ACCOUNT: `get_next_olly_account`,
+    GET_NEXT_OTHER_ACCOUNT: `get_next_other_account`,
 };
+
+const makeServiceGetCall = co.wrap(function*(path) {
+    return (yield axios.get(BASE_URL + path, { auth: BASIC_AUTH})).data;
+});
+
+const makeServicePostCall = co.wrap(function*(path, data) {
+    return (yield axios.post(BASE_URL + path, data, { auth: BASIC_AUTH})).data;
+});
 
 exports.getInstagramUsers = co.wrap(function*() {
     try {
-        return (yield axios.get(BASE_URL + URL_PATHS.GET_IG_USERS, { auth: BASIC_AUTH})).data;
+        return yield makeServiceGetCall(URL_PATHS.GET_IG_USERS);
     } catch (err) {
         console.log(err);
     }
 });
 
-exports.createUserCycler = (users) => {
-    let currentuser = -1;
-    return () => {
-        currentuser++;
-        if (currentuser >= users.length) { currentuser = 0; }
+exports.saveResult = co.wrap(function*(result) {
+    return yield makeServicePostCall(URL_PATHS.ADD_CRAWL_RESULT, result);
+});
 
-        return users[currentuser];
+exports.getNextIdToCrawl = co.wrap(function*() {
+    // don't really care about perf here, always ask in priority order
+    const mollyAccount = (yield makeServiceGetCall(URL_PATHS.GET_NEXT_MOLLY_ACCOUNT)).user_id;
+    if (!!mollyAccount) {
+        return mollyAccount;
+    }
+    const ollyAccount = (yield makeServiceGetCall(URL_PATHS.GET_NEXT_OLLY_ACCOUNT)).user_id;
+    if (!!ollyAccount) {
+        return ollyAccount;
+    }
+    const otherAccount = (yield makeServiceGetCall(URL_PATHS.GET_NEXT_OTHER_ACCOUNT)).user_id;
+    if (!!otherAccount) {
+        return otherAccount;
+    }
+
+    return undefined;
+});
+
+const MAX_BAD_REPORTS_PER_CYCLE = 4;
+exports.createUserCycler = (users) => {
+    const usersCopy = users.slice();
+    usersCopy.forEach((user) => {
+        user.reportedCount = 0;
+        user.reportAsBad = () => {
+            user.reportedCount++;
+        };
+    });
+
+    return () => {
+        const nextUser = usersCopy.find((user) => {
+            return user.reportedCount < MAX_BAD_REPORTS_PER_CYCLE;
+        });
+
+        usersCopy.unshift(usersCopy.pop());
+
+        return nextUser;
     };
 };
