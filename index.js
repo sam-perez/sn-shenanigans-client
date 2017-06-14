@@ -21,8 +21,8 @@ if (argv.getUsers) {
                 console.log('Successfully logged in ' + user.username);
 
             } catch (err) {
-                console.log('Could not log in ' + user.username + '!! Try logging in to IG');
                 console.log(err);
+                console.log('Could not log in ' + user.username + '!! Try logging in to IG');
             }
             console.log('Waiting before trying next user...');
             yield bluebird.Promise.delay(1000);

@@ -32,7 +32,7 @@ const crawlNextAccounts = co.wrap(function*(getNextUser, getNextIdToCrawl, saveR
     try {
         const session = yield createSessionWithUser(user);
 
-        console.log('logged in, waiting to make ' + accountslefttocrawl + ' requests...');
+        console.log(user.username + ' logged in, waiting to make ' + accountslefttocrawl + ' requests...');
         yield bluebird.Promise.delay(getLoginWait());
 
         while(accountslefttocrawl-- > 0) {
@@ -54,12 +54,13 @@ const crawlNextAccounts = co.wrap(function*(getNextUser, getNextIdToCrawl, saveR
         user.reportAsBad();
     }
 
+    console.log(`${user.username} is done making requests`);
     return true;
 });
 
-const PARALLELISM = 1;
+const PARALLELISM = 2;
 const EXECUTIONS_BETWEEN_LONG_SLEEP = 50;
-const LONG_SLEEP_DURATION = 60 * 30; // 30 min long sleep
+const LONG_SLEEP_DURATION_IN_SECONDS = 60 * 30; // 30 min long sleep
 
 exports.kickoff = co.wrap(function*(getInstagramUsers, createUserCycler, saveResult, getNextIdToCrawl) {
     const users = yield getInstagramUsers();
@@ -71,7 +72,10 @@ exports.kickoff = co.wrap(function*(getInstagramUsers, createUserCycler, saveRes
         let loopsLeftUntilLongSleep = EXECUTIONS_BETWEEN_LONG_SLEEP;
         while (loopsLeftUntilLongSleep > 0) {
             try {
-                const results = yield (Array.apply(0, Array(PARALLELISM)).map((val) => crawlNextAccounts(getNextUser, getNextIdToCrawl, saveResult)));
+                const results = yield (Array.apply(0, Array(PARALLELISM)).map(
+                    (val) => crawlNextAccounts(getNextUser, getNextIdToCrawl, saveResult)
+                ));
+
                 const shouldStop = results.some((result) => result === false);
                 if (shouldStop) {
                     break;
@@ -85,19 +89,19 @@ exports.kickoff = co.wrap(function*(getInstagramUsers, createUserCycler, saveRes
             loopsLeftUntilLongSleep--;
             console.log(`${loopsLeftUntilLongSleep} loops left until we enter hibernation...`)
         }
-        yield countdownTimer(LONG_SLEEP_DURATION);
+        yield countdownTimer(LONG_SLEEP_DURATION_IN_SECONDS);
     }
 
     console.log('done!');
 });
 
-const countdownTimer = co.wrap(function*(duration) {
-    console.log(`Sleeping for approximately ${duration} seconds...`);
+const countdownTimer = co.wrap(function*(durationInSecs) {
+    console.log(`Sleeping for approximately ${durationInSecs} seconds...`);
     let secondsSlept = 0;
-    while (duration > secondsSlept) {
+    while (durationInSecs > secondsSlept) {
         yield bluebird.Promise.delay(1000);
         secondsSlept++;
-        statusLog(`${duration - secondsSlept} seconds remaining...`);
+        statusLog(`${durationInSecs - secondsSlept} seconds remaining...`);
     }
 });
 

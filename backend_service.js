@@ -66,12 +66,20 @@ exports.createUserCycler = (users) => {
         };
     });
 
+    let previousUser = undefined;
     return () => {
         const nextUser = usersCopy.find((user) => {
             return user.reportedCount < MAX_BAD_REPORTS_PER_CYCLE;
         });
 
         usersCopy.unshift(usersCopy.pop());
+
+        if (previousUser === nextUser) {
+            // we only have one valid user left, give up lest we kill them too
+            return undefined;
+        }
+
+        previousUser = nextUser;
 
         return nextUser;
     };
