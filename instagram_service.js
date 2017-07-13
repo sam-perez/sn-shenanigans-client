@@ -11,7 +11,7 @@ const MIN_NUMBER_REQUESTS_PER_USER = 1;
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min) + min);
 const getRandomNumberRequests = () => getRandomInt(MIN_NUMBER_REQUESTS_PER_USER, MAX_NUMBER_REQUESTS_PER_USER);
 
-const MAX_RANDOM_WAIT = argv.requestWaitMax || 5000;
+const MAX_RANDOM_WAIT = argv.requestWaitMax || 10000;
 const MIN_RANDOM_WAIT = argv.requestWaitMin || 3000;
 
 const getRandomWait = () => getRandomInt(MIN_RANDOM_WAIT, MAX_RANDOM_WAIT);
