@@ -37,27 +37,31 @@ const crawlNextAccounts = co.wrap(function*(getNextUser, getNextIdToCrawl, saveR
         yield bluebird.Promise.delay(getLoginWait());
 
         while(accountslefttocrawl-- > 0) {
-            let nextid = yield getNextIdToCrawl();
-            if (!nextid) {
-                console.log('Did not get an id to crawl...');
-                return false;
+            try {
+                let nextid = yield getNextIdToCrawl();
+                if (!nextid) {
+                    console.log('Did not get an id to crawl...');
+                    return false;
+                }
+                console.log('about to crawl: ' + nextid);
+                let useraccount = yield Client.Account.getById(session, nextid);
+                yield saveResult(useraccount._params);
+            } catch (err) {
+                if (err.name === 'NotFoundError') {
+                    // this is fine, just skip
+                    console.log('Page was not found, skipping...');
+                } else {
+                    throw err;
+                }
             }
-            console.log('about to crawl: ' + nextid);
-            let useraccount = yield Client.Account.getById(session, nextid);
-            yield saveResult(useraccount._params);
 
             console.log('waiting before next request');
             yield bluebird.Promise.delay(getRandomWait());
         }
     } catch (err) {
-        if (err.name === 'NotFoundError') {
-            // this is fine, just skip
-            console.log('Page was not found, skipping...');
-        } else {
-            console.log('something is wrong...');
-            console.log(err);
-            user.reportAsBad();
-        }
+        console.log('something is wrong...');
+        console.log(err);
+        user.reportAsBad();
     }
 
     console.log(`${user.username} is done making requests`);
