@@ -97,7 +97,6 @@ exports.kickoff = co.wrap(function*(getInstagramUsers, createUserCycler, saveRes
         } catch (err) {
             console.log('error while executing a set');
             console.log(err);
-            break;
         }
 
         if (shouldStop) {
